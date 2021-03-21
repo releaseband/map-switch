@@ -1,18 +1,18 @@
-package services
+package recorder
 
 import (
 	"fmt"
 	"os"
 	"strings"
 	"text/template"
+
+	"github.com/releaseband/map-switch/generator/parser/models"
+	"github.com/releaseband/map-switch/generator/recorder/templates"
 )
 
-type FileRecorder struct {
-}
-
-func NewRecorder() FileRecorder {
-	return FileRecorder{}
-}
+const (
+	postfix = ".gen.go"
+)
 
 func createFile(filename string) (*os.File, error) {
 	f, err := os.Create(filename)
@@ -33,11 +33,10 @@ func removeFile(filename string) error {
 }
 
 func getGenFilename(filename string) string {
-	n := strings.Replace(filename, ".go", "", 1)
-	return n + ".gen.go"
+	return strings.Replace(filename, ".go", "", 1) + postfix
 }
 
-func (w FileRecorder) RecordToFile(filename string, t *template.Template, i interface{}) error {
+func recordToFile(filename string, t *template.Template, i interface{}) error {
 	gFileName := getGenFilename(filename)
 
 	if fileExist(gFileName) {
@@ -55,6 +54,23 @@ func (w FileRecorder) RecordToFile(filename string, t *template.Template, i inte
 
 	if err := t.Execute(f, i); err != nil {
 		return fmt.Errorf("exucute template failed: %w", err)
+	}
+
+	return nil
+}
+
+func makeTemplate(tempData string) *template.Template {
+	return template.Must(template.New("map => switch").
+		Funcs(template.FuncMap{
+			"increment": func(i int) int {
+				return i + 1
+			},
+		}).Parse(tempData))
+}
+
+func RecordMap(fd *models.FileDeclaration) error {
+	if err := recordToFile(fd.PackageName, makeTemplate(templates.Template), fd); err != nil {
+		return fmt.Errorf("recordToFile: %w", err)
 	}
 
 	return nil

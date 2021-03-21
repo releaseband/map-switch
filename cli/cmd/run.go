@@ -2,69 +2,40 @@ package cmd
 
 import (
 	"errors"
-	"log"
 
-	"github.com/releaseband/map-switch/analysis"
-	"github.com/releaseband/map-switch/services"
-
+	"github.com/releaseband/map-switch/generator"
 	"github.com/spf13/cobra"
-)
-
-const (
-	cmdMapBySlice = "map_by_slice" //todo: в теги перевести
 )
 
 var (
 	runCmd = &cobra.Command{
 		Use:   "run",
-		Short: "generate map to switch case",
+		Short: "generate map to switch",
 		RunE:  run,
 	}
-	runFlags = struct {
-		Path    string
-		Command string
-	}{}
+	Path string
 )
 
 func init() {
-	runCmd.PersistentFlags().StringVarP(&runFlags.Path, "filepath", "f",
-		"", "path to file where i can find map")
-
-	runCmd.PersistentFlags().StringVarP(&runFlags.Command, "command", "c", cmdMapBySlice,
-		"generate command")
+	runCmd.PersistentFlags().StringVarP(&Path, "path", "f", "", "src file path")
 }
 
 func validateFlags() error {
-	if len(runFlags.Path) == 0 {
+	if len(Path) == 0 {
 		return errors.New("'path' flag doesn't be empty")
 	}
 
 	return nil
 }
 
-func run(cmd *cobra.Command, args []string) error {
-	err := validateFlags()
-	if err != nil {
+func run(_ *cobra.Command, _ []string) error {
+	if err := validateFlags(); err != nil {
 		return err
 	}
 
-	recorder := services.NewRecorder()
-	switch runFlags.Command {
-	case cmdMapBySlice:
-		mp := analysis.NewMapParams(
-			runFlags.Path,
-		)
-
-		err = analysis.GenerateMapByString(recorder, mp)
-	default:
-		err = errors.New("command not supported")
-	}
-
-	return err
+	return generator.Run(Path)
 }
 
-func Execute() {
-	if err := runCmd.Execute(); err != nil {
-		log.Fatal(err)
-	}
+func Execute() error {
+	return runCmd.Execute()
 }

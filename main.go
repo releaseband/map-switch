@@ -1,7 +1,12 @@
 package main
 
-import "github.com/releaseband/map-switch/cli/cmd"
+import (
+	"github.com/releaseband/map-switch/cli/cmd"
+	"log"
+)
 
 func main() {
-	cmd.Execute()
+	if err := cmd.Execute(); err != nil {
+		log.Fatal(err)
+	}
 }
